@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Habit Engine • AI Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+
+:root {
+  --bg:       #040810;
+  --bg2:      #070d1a;
+  --bg3:      #0c1525;
+  --border:   rgba(255,255,255,.06);
+  --border2:  rgba(79,124,255,.22);
+  --text:     #dce8f5;
+  --muted:    #5a7a96;
+  --blue:     #4f7cff;
+  --cyan:     #22d3ee;
+  --green:    #34d399;
+  --amber:    #fbbf24;
+  --red:      #f87171;
+  --purple:   #a78bfa;
+  --glow-b:   rgba(79,124,255,.18);
+  --glow-c:   rgba(34,211,238,.12);
+  --font:     'Syne', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --r:        14px;
+  --r-sm:     9px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 0%,   rgba(79,124,255,.09) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(34,211,238,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 50% 50%,  rgba(4,8,16,.95)     0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.07) 2px,
+    rgba(0,0,0,.07) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: auto;
+  padding: 32px 28px 80px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 36px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  border: 1px solid rgba(79,124,255,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 0 24px rgba(79,124,255,.3);
+  flex-shrink: 0;
+}
+
+.brand-text h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  line-height: 1;
+  background: linear-gradient(90deg, #e2eeff 30%, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-text p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-weight: 500;
+  letter-spacing: .3px;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 6px 12px;
+}
+
+.status-dot::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: .3s;
+}
+
+.status-dot.connected::before {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse-dot 2s infinite;
+}
+
+.status-dot.error::before {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ─── CONNECTION BAR ─────────────────────────────── */
+.conn-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 18px;
+  margin-bottom: 28px;
+}
+
+.conn-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+#apiBase {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+#apiBase:focus { border-color: var(--blue); }
+
+#pingOut {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ─── SECTION TITLE ──────────────────────────────── */
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+  margin: 28px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ─── STAT CARDS ─────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.stat {
+  background: linear-gradient(145deg, var(--bg2), var(--bg3));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .25s, transform .2s;
+  cursor: default;
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent, var(--blue)), transparent);
+  opacity: 0;
+  transition: opacity .3s;
+}
+
+.stat:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,.1);
+}
+
+.stat:hover::before { opacity: 1; }
+
+.stat-icon {
+  font-size: 18px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.stat .label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.stat .value {
+  font-size: 26px;
+  font-weight: 800;
+  margin-top: 5px;
+  line-height: 1;
+  font-family: var(--mono);
+}
+
+.stat .unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 3px;
+}
+
+.stat.green  { --accent: var(--green);  }
+.stat.amber  { --accent: var(--amber);  }
+.stat.red    { --accent: var(--red);    }
+.stat.blue   { --accent: var(--blue);   }
+.stat.purple { --accent: var(--purple); }
+.stat.cyan   { --accent: var(--cyan);   }
+
+/* ─── COOLDOWN BANNER ────────────────────────────── */
+#cooldownBanner {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, rgba(251,191,36,.08), transparent);
+  border: 1px solid rgba(251,191,36,.25);
+  border-radius: var(--r);
+  padding: 13px 18px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--amber);
+  animation: slide-in .3s ease;
+}
+
+#cooldownBanner.show { display: flex; }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.banner-icon { font-size: 18px; }
+
+/* ─── PREDICT SECTION ────────────────────────────── */
+.predict-card {
+  background: linear-gradient(145deg, var(--bg2), var(--bg3));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px;
+  margin-bottom: 4px;
+}
+
+.predict-card .card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(79,124,255,.15);
+  color: #93b4ff;
+  border: 1px solid rgba(79,124,255,.2);
+}
+
+.pgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 720px) {
+  .pgrid { grid-template-columns: 1fr 1fr; }
+}
+
+.pf label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.pf input[type="number"] {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .2s;
+  -moz-appearance: textfield;
+}
+
+.pf input[type="number"]:focus { border-color: var(--blue); }
+.pf input[type="number"]::-webkit-inner-spin-button { display: none; }
+
+#predictResult {
+  display: none;
+  margin-top: 16px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+#predictResult.show { display: block; animation: slide-in .25s ease; }
+
+.result-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, rgba(79,124,255,.08), transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.result-behavior {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.result-cell {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+
+.result-cell:last-child { border-right: none; }
+
+.result-cell .rc-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.result-cell .rc-value {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.bv-Disciplined      { color: var(--green); }
+.bv-Revenge-Trader   { color: var(--red); }
+.bv-High-Risk-Trader { color: var(--amber); }
+.bv-Overtrader       { color: var(--purple); }
+
+@media (max-width: 680px) {
+  .result-grid { grid-template-columns: 1fr 1fr; }
+  .result-cell { border-bottom: 1px solid var(--border); }
+}
+
+/* ─── UPLOAD SECTION ─────────────────────────────── */
+.upload-card {
+  background: linear-gradient(145deg, var(--bg2), var(--bg3));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px;
+}
+
+.drop {
+  border: 2px dashed rgba(79,124,255,.25);
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  background: rgba(4,8,16,.6);
+  transition: .25s;
+  cursor: pointer;
+  position: relative;
+}
+
+.drop.drag,
+.drop:hover {
+  border-color: var(--blue);
+  background: rgba(79,124,255,.04);
+}
+
+.drop-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  display: block;
+  opacity: .6;
+}
+
+.drop h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.drop p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.browse-link {
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+input[type="file"] { display: none; }
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+#fileInfo {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#errBox {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 8px;
+  min-height: 0;
+  transition: .2s;
+}
+
+/* ─── SPLIT GRID ─────────────────────────────────── */
+.split {
+  display: grid;
+  grid-template-columns: 1.25fr .75fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; }
+}
+
+.inner-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.inner-card-head {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inner-card-head h4 {
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--bg3);
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+}
+
+/* ─── TABLES ─────────────────────────────────────── */
+.tbl-scroll { overflow: auto; max-height: 340px; }
+
+table { width: 100%; border-collapse: collapse; }
+
+th {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
+  white-space: nowrap;
+}
+
+td {
+  padding: 9px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  vertical-align: top;
+}
+
+td.mono { font-family: var(--mono); }
+
+tr:last-child td { border-bottom: none; }
+
+tr:hover td { background: rgba(79,124,255,.04); }
+
+.explain {
+  max-width: 200px;
+  white-space: normal;
+  line-height: 1.55;
+  color: #6fa3cc;
+  font-size: 11px;
+}
+
+/* ─── PILLS ──────────────────────────────────────── */
+.pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+.high   { background: rgba(248,113,113,.12); color: #fca5a5; border: 1px solid rgba(248,113,113,.2); }
+.med    { background: rgba(167,139,250,.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,.2); }
+.low    { background: rgba(52,211,153,.12);  color: #6ee7b7; border: 1px solid rgba(52,211,153,.2); }
+
+/* ─── RUN OUT BAR ────────────────────────────────── */
+.run-bar {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-bar .spinner {
+  display: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+.run-bar.loading .spinner { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── BUTTONS ────────────────────────────────────── */
+.btn {
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 9px 16px;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: .18s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #2563eb, #4f7cff);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(79,124,255,.3);
+}
+
+.btn.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(79,124,255,.45);
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background: var(--bg3);
+  border-color: rgba(255,255,255,.12);
+}
+
+.btn.danger {
+  background: transparent;
+  border: 1px solid rgba(248,113,113,.2);
+  color: var(--red);
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: rgba(248,113,113,.06);
+}
+
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ─── MISC ───────────────────────────────────────── */
+.ok    { color: var(--green); }
+.err   { color: var(--red); }
+.mono  { font-family: var(--mono); }
+
+code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: #93b4ff;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.empty-state .es-icon { font-size: 28px; margin-bottom: 8px; opacity: .4; }
+
+/* ─── PROGRESS BAR ───────────────────────────────── */
+.progress-wrap {
+  display: none;
+  height: 3px;
+  background: var(--bg3);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.progress-wrap.show { display: block; }
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+
+/* ─── HISTORY TAB ────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+  color: var(--muted);
+  border: none;
+  background: none;
+  font-family: var(--font);
+}
+
+.tab.active {
+  background: var(--bg3);
+  color: var(--text);
+  box-shadow: 0 1px 6px rgba(0,0,0,.4);
+}
+
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- ─── TOP BAR ────────────────────────────────── -->
+  <div class="top-bar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-text">
+        <h1>Habit Engine</h1>
+        <p>AI-powered trading behaviour analysis</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div id="statusDot" class="status-dot">Disconnected</div>
+      <button id="btnRefreshCards" class="btn ghost">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- ─── CONNECTION BAR ─────────────────────────── -->
+  <div class="conn-card">
+    <span class="conn-label">API</span>
+    <input id="apiBase" value="http://localhost:8000" placeholder="http://localhost:8000" />
+    <button id="btnPing" class="btn primary">Ping /health</button>
+    <span id="pingOut"></span>
+  </div>
+
+  <!-- ─── COOLDOWN BANNER ─────────────────────────── -->
+  <div id="cooldownBanner">
+    <span class="banner-icon">⚠️</span>
+    <div>
+      <strong>Cooldown Recommended</strong> — Your emotional index is elevated.
+      Consider stepping away from the market.
+    </div>
+  </div>
+
+  <!-- ─── LIVE STATS ──────────────────────────────── -->
+  <div class="section-title">Live Metrics</div>
+  <div id="cards" class="stats">
+    <div class="stat green">
+      <span class="stat-icon">🎯</span>
+      <div class="label">Habit Score</div>
+      <div class="value"><span class="mono">—</span><span class="unit">/100</span></div>
+    </div>
+    <div class="stat amber">
+      <span class="stat-icon">🌡</span>
+      <div class="label">Emotional Index</div>
+      <div class="value"><span class="mono">—</span><span class="unit">/100</span></div>
+    </div>
+    <div class="stat red">
+      <span class="stat-icon">🔔</span>
+      <div class="label">Total Alerts</div>
+      <div class="value"><span class="mono">—</span></div>
+    </div>
+    <div class="stat blue">
+      <span class="stat-icon">📊</span>
+      <div class="label">Trades Analysed</div>
+      <div class="value"><span class="mono">—</span></div>
+    </div>
+    <div class="stat purple">
+      <span class="stat-icon">💼</span>
+      <div class="label">Open Positions</div>
+      <div class="value"><span class="mono">—</span></div>
+    </div>
+  </div>
+
+  <!-- ─── BEHAVIOUR PREDICTION ───────────────────── -->
+  <div class="section-title">Behaviour Prediction</div>
+
+  <div class="predict-card">
+    <div class="card-head">
+      <h3>🧠 Predict Trader Profile <span class="badge">POST /predict/</span></h3>
+      <button id="btnPredict" class="btn primary">Run Prediction →</button>
+    </div>
+
+    <div class="pgrid">
+      <div class="pf"><label>Avg Trades / Day</label>     <input id="p_trades" type="number" value="5"      step="0.5"></div>
+      <div class="pf"><label>Win Rate (0–1)</label>       <input id="p_wr"     type="number" value="0.5"    step="0.01"></div>
+      <div class="pf"><label>Max Loss Streak</label>      <input id="p_streak" type="number" value="2"      step="1"></div>
+      <div class="pf"><label>Max Drawdown %</label>       <input id="p_dd"     type="number" value="10"     step="0.5"></div>
+      <div class="pf"><label>Avg Position Size ₹</label>  <input id="p_pos"    type="number" value="50000"  step="1000"></div>
+      <div class="pf"><label>Risk / Trade %</label>       <input id="p_risk"   type="number" value="2"      step="0.1"></div>
+      <div class="pf"><label>Post-Loss Trade Ratio</label><input id="p_tal"    type="number" value="0.3"    step="0.05"></div>
+      <div class="pf"><label>Avg Hold Time (min)</label>  <input id="p_hold"   type="number" value="120"    step="5"></div>
+      <div class="pf"><label>Behaviour Encoded</label>    <input id="p_bte"    type="number" value="0"      step="1"></div>
+    </div>
+
+    <div id="predictErrWrap" style="font-size:12px;color:var(--red);margin-bottom:8px;font-family:var(--mono);"></div>
+
+    <div id="predictResult">
+      <div class="result-header">
+        <span style="font-size:22px;">🏷</span>
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px;">Classification</div>
+          <div id="pr_behavior" class="result-behavior">—</div>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-cell">
+          <div class="rc-label">Discipline</div>
+          <div id="pr_discipline" class="rc-value">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="rc-label">Habit Score</div>
+          <div id="pr_habit" class="rc-value">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="rc-label">Confidence</div>
+          <div id="pr_conf" class="rc-value">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="rc-label">Model</div>
+          <div id="pr_fallback" class="rc-value">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── CSV UPLOAD ──────────────────────────────── -->
+  <div class="section-title">Analyse Trades</div>
+
+  <div class="upload-card">
+
+    <div id="drop" class="drop">
+      <span class="drop-icon">📂</span>
+      <h4>Drop your CSV here</h4>
+      <p>
+        or <label for="file" class="browse-link">browse files</label>
+        <br>
+        Required columns: <code>trade_id, symbol, action, quantity, price, price_before</code>
+      </p>
+      <input id="file" type="file" accept=".csv,text/csv" />
+    </div>
+
+    <div class="action-row">
+      <button id="btnAnalyze" class="btn primary" disabled>⚡ Analyse Trades</button>
+      <button id="btnClear"   class="btn danger"   disabled>✕ Clear</button>
+      <span id="fileInfo"></span>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <div id="errBox"></div>
+
+    <div class="split">
+      <!-- Preview -->
+      <div class="inner-card">
+        <div class="inner-card-head">
+          <h4>📋 CSV Preview</h4>
+          <span id="previewCount" class="row-count">0 rows</span>
+        </div>
+        <div class="tbl-scroll">
+          <div id="previewEmpty" class="empty-state">
+            <div class="es-icon">📁</div>
+            Upload a CSV to preview trades
+          </div>
+          <table id="previewTable" style="display:none"></table>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="inner-card">
+        <div class="inner-card-head">
+          <h4>🔔 AI Alerts</h4>
+          <span id="alertCount" class="row-count">0 alerts</span>
+        </div>
+        <div id="runBar" class="run-bar">
+          <div class="spinner"></div>
+          <span id="runOut">Waiting for analysis…</span>
+        </div>
+        <div class="tbl-scroll">
+          <div id="alertsEmpty" class="empty-state">
+            <div class="es-icon">🤖</div>
+            Alerts will appear after analysis
+          </div>
+          <table id="alertsTable" style="display:none"></table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /upload-card -->
+
+</div><!-- /wrap -->
+
+<script src="../js/dashboard.js"></script>
+
+<script>
+/* ─── UI EXTRAS ─────────────────────────────────────────────────── */
+
+// Wires up the enhanced UI elements that dashboard.js may not handle.
+// The actual API calls remain in dashboard.js.
+
+/* Stats card update hook — called after refreshCards() populates #cards */
+function enhanceStatCards() {
+  const colorClasses = ['green','amber','red','blue','purple','cyan'];
+  const icons = ['🎯','🌡','🔔','📊','💼','📈'];
+  document.querySelectorAll('#cards .stat').forEach((el, i) => {
+    // Remove old color class, add new
+    colorClasses.forEach(c => el.classList.remove(c));
+    el.classList.add(colorClasses[i % colorClasses.length]);
+  });
+}
+
+/* Override renderAlerts to also manage empty state */
+const _origRenderAlerts = window.renderAlerts;
+if (typeof _origRenderAlerts === 'function') {
+  window.renderAlerts = function(alerts) {
+    _origRenderAlerts(alerts);
+    document.getElementById('alertsEmpty').style.display = alerts.length ? 'none' : '';
+    document.getElementById('alertsTable').style.display = alerts.length ? '' : 'none';
+    document.getElementById('alertCount').textContent = `${alerts.length} alerts`;
+  };
+}
+
+/* Override refreshCards to style the placeholder cards */
+const _origRefreshCards = window.refreshCards;
+if (typeof _origRefreshCards === 'function') {
+  const wrapped = async function() {
+    await _origRefreshCards();
+    enhanceStatCards();
+  };
+  window.refreshCards = wrapped;
+  btnRefreshCards.addEventListener('click', wrapped);
+}
+
+/* Status dot sync */
+function setStatusDot(state, label) {
+  const el = document.getElementById('statusDot');
+  el.className = 'status-dot ' + (state || '');
+  el.textContent = label || 'Disconnected';
+}
+
+/* Override pingHealth for status dot */
+const _origPingHealth = window.pingHealth;
+if (typeof _origPingHealth === 'function') {
+  window.pingHealth = async function() {
+    setStatusDot('', 'Connecting…');
+    await _origPingHealth();
+    const pingOut = document.getElementById('pingOut');
+    if (pingOut.innerHTML.includes('ok') || pingOut.querySelector?.('.ok')) {
+      setStatusDot('connected', 'Connected');
+    } else {
+      setStatusDot('error', 'Error');
+    }
+  };
+}
+
+/* Progress bar integration */
+const _origAnalyzeCSV = window.analyzeCSV;
+if (typeof _origAnalyzeCSV === 'function') {
+  window.analyzeCSV = async function() {
+    const pw = document.getElementById('progressWrap');
+    const pb = document.getElementById('progressBar');
+    const rb = document.getElementById('runBar');
+    pw.classList.add('show');
+    pb.style.width = '5%';
+    rb.classList.add('loading');
+    await _origAnalyzeCSV();
+    pb.style.width = '100%';
+    setTimeout(() => {
+      pw.classList.remove('show');
+      pb.style.width = '0%';
+      rb.classList.remove('loading');
+    }, 800);
+  };
+}
+
+/* Preview table empty state */
+const _origRenderPreview = window.renderPreview;
+if (typeof _origRenderPreview === 'function') {
+  window.renderPreview = function(rows) {
+    _origRenderPreview(rows);
+    document.getElementById('previewEmpty').style.display = rows.length ? 'none' : '';
+    document.getElementById('previewTable').style.display = rows.length ? '' : 'none';
+    document.getElementById('previewCount').textContent = `${rows.length} rows`;
+  };
+}
+</script>
+
+</body>
+</html>
